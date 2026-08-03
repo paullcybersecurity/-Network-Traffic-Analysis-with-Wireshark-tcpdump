@@ -1,5 +1,5 @@
 ## Objective
-The objective of this lab is to generate and analyze live attack traffic to understand reconnaissance and brute-force patterns at the network layer with ```WIRESHARK```
+The objective of this lab is to generate and analyze live attack traffic to understand reconnaissance and brute-force patterns at the network layer with ```WIRESHARK```, while also deeply understanding the correlation between SIEM generated logs, and host based log tools.
 
 ## Environment
 
@@ -17,14 +17,31 @@ The objective of this lab is to generate and analyze live attack traffic to unde
 
 ## Analysis
 Reconnaissance detection: 
+burst of multiple SYN handshake from IP ```192.168.142.139```  to my Ubuntu machine through the span of seconds, is highly suspicious, and serves as alert that an attack is underway
+![Nmap SYN request](nmaprecon.png) 
+
+Brute-force detection:
+all SSH attepmt by hydra was captured by wireshark, analysing these logs further revealed the attacker's IP addr. 
+![ Hydra Brute-force](hydrabruteforce.png)
+
+![ Wireshark listening and generating log across my HOME LAB.](wiresharkpcap.png)
 
 
+## IOC Table
 
-
-
-
-
-| Header 1 | Header 2 | Header 3 |
+| IOC Type | Value  | Context |
 | -------- | -------- | -------- |
-| Row 1 A  | Row 1 B  | Row 1 C  |
-| Row 2 A  | Row 2 B  | Row 2 C  |
+| Source IP  | 192.168.142.139 |  Scanning + brute-force origin |
+| Target IP  | 192.168.142.138  | Victim host  |
+| Target service | SSH (port 22) | Brute-force target |
+| Ports Scanned | 4424,23831, .....| Some ports from NmapSYN scan |
+| pattern | High volume SYN | This is indicative of port scan |
+| Auth attempts | per previous lab count on auth.log- 28 | All 28 were present in the Pcap |
+
+## Timeline
+
+At 01:03:40 🕓, host 192.168.142.139 initiated a SYN scan against 192.168.142.138, sweeping ports 1-65535 over ~40 seconds. This was followed at 01:04:53 🕠 by repeated SSH authentication attempts against port 22, consistent with a Hydra dictionary attack. Correlation with /var/log/auth.log confirmed 26 failed login attempts before a successful authentication few seconds after.
+
+## Key Takeaway
+The purpose of this lab is to deeply understand the correlation between SIEM tools, and host log tools, pcap shows connections patterns on wireshark, while auth.log confirm the outcome,  A pcap + log correlation like this,  is standard and a much needed SOC triage methodology.
+
